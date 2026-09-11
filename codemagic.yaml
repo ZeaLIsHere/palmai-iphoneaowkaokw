@@ -1,0 +1,33 @@
+workflows:
+  ios-unsigned:
+    name: iOS Unsigned IPA
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Run static analysis and tests
+        script: |
+          flutter analyze
+          flutter test
+      - name: Build iOS without code signing
+        script: flutter build ios --release --no-codesign
+      - name: Package unsigned IPA
+        script: |
+          set -e
+          cd build/ios/iphoneos
+          rm -rf Payload PalmAI-unsigned.ipa
+          mkdir Payload
+          cp -r Runner.app Payload/
+          zip -qry PalmAI-unsigned.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/*.ipa
